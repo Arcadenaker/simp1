@@ -18,7 +18,51 @@ except tomllib.TOMLDecodeError as e:
     logger.error(f"Erreur dans data.toml: {e}")
     exit()
 
+def poussee_archimede(masse):
+    return masse * 9.81
 
+def enfoncement(longueur_barge):
+    """ 
+    Calcule la hauteur de l'enfoncement de la plateforme
+    Pré:    masses -> list
+            longueur_barge -> int
+    Post: retourne un int (hauteur de l'enfoncement)
+    """
+    return somme_masses() / (DENSITE_EAU * longueur_barge**2)
+
+def somme_masses():
+    global data
+    sum = 0
+    for m in range(len(data["Grue"])):
+        sum += int(data["Grue"][str(m)]["masse"])
+    sum += data["Barge"]["Masse"]
+    return sum
+
+def longueurs_bases(aire_immergee, longueur_barge, angles):
+    """
+    Calcule la longueur du côté gauche et droit qui est immergée
+    Pré:    aire_immergee -> int
+            longueur_barge -> int
+            angles -> list
+    Post: retourne une liste: [longueur_gauche, longueur_droite]
+    """
+    min_angle = min(angles)
+    grande_base = aire_immergee/longueur_barge + (longueur_barge*math.tan(min_angle))/2
+    petite_base = aire_immergee/longueur_barge - (longueur_barge*math.tan(min_angle))/2
+    return [petite_base, grande_base]
+
+def centre_poussee(longueurs_immergees, longueur_barge, theta):
+    lc = (longueur_barge * (longueurs_immergees[1]+2*longueurs_immergees[0]))/(3*(longueurs_immergees[1]+longueurs_immergees[0]))
+    hc = (longueurs_immergees[1]**2 + longueurs_immergees[1]*longueurs_immergees[0] + longueurs_immergees[0]**2)/(3*(longueurs_immergees[1]+longueurs_immergees[0]))
+    pos_x_prime = -(longueur_barge)/2 + lc
+    pos_y_prime = -enfoncement(somme_masses(), longueur_barge) + hc
+    pos_x = pos_x_prime*math.cos(theta) - pos_y_prime*math.sin(theta)
+    return pos_x
+
+def centre_masse_barge(data):
+    CMx = data["Barge"]["Masse"]*((data["Barge"]["Longueur"])/2)
+    CMy = data["Barge"]["Masse"]*((data["Barge"]["Hauteur"])/2)
+    return (CMx, CMy)
 
 def centre_masse_grue(articulations, angles):
     """
@@ -78,17 +122,15 @@ def centre_masse_grue(articulations, angles):
         logger.error(f"Vous avez fait une erreur dans le fichier toml, Python le renseigne l'index {e}")
         return
 
-
-
-def hauteur_enfoncement(masses, longueur_barge):
-    """ 
-    Calcule la hauteur de l'enfoncement de la plateforme
-    Pré:    masses -> list
-            longueur_barge -> int
-    Post: retourne un int (hauteur de l'enfoncement)
-    """
-    somme_masses = sum(masses)
-    return somme_masses / (DENSITE_EAU * longueur_barge**2)
+def centre_masse_total(centre_masse_grue,centre_masse_barge, data):
+    centre_masse_grue_decale = (centre_masse_grue[0]+data["Barge"]["Declage_grue"]-data["Barge"]["Longueur"]/2, centre_masse_grue[1]+data["Barge"]["Hauteur"]-enfoncement(data["Barge"]["Longueur"]))
+    centre_masse_barge_decale = (centre_masse_barge[0]-data["Barge"]["Longueur"]/2, centre_masse_barge[1]-enfoncement(data["Barge"]["Longueur"]))
+    masse_articulations_totale = 0
+    for i in range(len(data["Grue"])):
+        masse_articulations_totale += data["Grue"][str(i)]["masse"]
+    CMx = (centre_masse_barge_decale[0] * data["Barge"]["Masse"] + centre_masse_grue_decale[0] * masse_articulations_totale)/(masse_articulations_totale + data["Barge"]["Masse"])
+    CMy = (centre_masse_barge_decale[1] * data["Barge"]["Masse"] + centre_masse_grue_decale[1] * masse_articulations_totale)/(masse_articulations_totale + data["Barge"]["Masse"])
+    return (CMx, CMy)
 
 def angles_immersion_soulevement(hauteur_enfoncement, hauteur_barge, longueur_barge):
     """
@@ -111,23 +153,8 @@ def aire_immergee(longueur_barge, hauteur_enfoncement):
     """
     return longueur_barge * hauteur_enfoncement
 
-def longueurs_immergees(aire_immergee, longueur_barge, angles):
-    """
-    Calcule la longueur du côté gauche et droit qui est immergée
-    Pré:    aire_immergee -> int
-            longueur_barge -> int
-            angles -> list
-    Post: retourne une liste: [longueur_gauche, longueur_droite]
-    """
-    min_angle = min(angles)
-    hauteur_gauche = aire_immergee/longueur_barge + (longueur_barge*math.tan(min_angle))/2
-    hauteur_droite = aire_immergee/longueur_barge - (longueur_barge*math.tan(min_angle))/2
-    return [hauteur_gauche, hauteur_droite]
 
-
-
-
-centre_masse_grue(data["Grue"], [math.pi/6,0, -math.pi/6,0])
+print(centre_masse_total(centre_masse_grue(data["Grue"], [0,0]), centre_masse_barge(data),data))
 
 xpoints = np.array([0, 7])
 ypoints = np.array([3, 3])

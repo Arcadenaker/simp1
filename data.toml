@@ -1,13 +1,13 @@
 #Unités: [m], [kg]
 
 [Barge]
-Longueur = 60
-Largeur = 60
-Hauteur = 25
-
+Longueur = 0.6
+Largeur = 0.6
+Hauteur = 0.2
+Masse = 1.5
+Declage_grue = 0.15
+ 
 [Grue]
-0 = {longueur = 0.2, largeur = 0.05, masse = 0.1} #Socle
-1 = {longueur = 0.3, largeur = 0.05, masse = 0.15}
-2 = {longueur = 0.2, largeur = 0.05, masse = 0.15}
-3 = {longueur = 0.2, largeur = 0.05, masse = 0.1}
-4 = {longueur = 0.1, largeur = 0.1, masse = 0.15}
+0 = {longueur = 0.2, largeur = 0.05, masse = 0.2} #Socle
+1 = {longueur = 0.3, largeur = 0.05, masse = 0.25}
+2 = {longueur = 0.3, largeur = 0.05, masse = 0.25}
