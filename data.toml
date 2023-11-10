@@ -3,11 +3,12 @@
 [Barge]
 Longueur = 0.6
 Largeur = 0.6
-Hauteur = 0.2
+Hauteur = 0.15
 Masse = 1.5
-Declage_grue = 0.15
- 
+Declage_grue = 0.2
+
 [Grue]
-0 = {longueur = 0.2, largeur = 0.05, masse = 0.2} #Socle
+0 = {longueur = 0.2, largeur = 0.05, masse = 0.25} #Socle
 1 = {longueur = 0.3, largeur = 0.05, masse = 0.25}
-2 = {longueur = 0.3, largeur = 0.05, masse = 0.25}
+2 = {longueur = 0.3, largeur = 0.05, masse = 0.3}
+3 = {longueur = 0.1, largeur = 0.1, masse = 0.3}

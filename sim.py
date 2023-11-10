@@ -18,19 +18,28 @@ except tomllib.TOMLDecodeError as e:
     logger.error(f"Erreur dans data.toml: {e}")
     exit()
 
-def poussee_archimede(masse):
+def gravite(masse):
+    """
+    Calcule la force de garvité de la masse donnée
+    Pré: prend la masse en paramètre (int)
+    Post: retourne la force en [N] (int)
+    """
     return masse * 9.81
 
 def enfoncement(longueur_barge):
     """ 
     Calcule la hauteur de l'enfoncement de la plateforme
-    Pré:    masses -> list
-            longueur_barge -> int
+    Pré:  longueur_barge -> int
     Post: retourne un int (hauteur de l'enfoncement)
     """
-    return somme_masses() / (DENSITE_EAU * longueur_barge**2)
+    return masse_totale() / (DENSITE_EAU * longueur_barge**2)
 
-def somme_masses():
+def masse_totale():
+    """
+    Calcule la masse totale de toute la structure
+    pré: ne prend aucun paramètre
+    post: retourne la masse totale de la structure 
+    """
     global data
     sum = 0
     for m in range(len(data["Grue"])):
@@ -38,35 +47,67 @@ def somme_masses():
     sum += data["Barge"]["Masse"]
     return sum
 
-def longueurs_bases(aire_immergee, longueur_barge, angles):
+def masse_articulations():
+    """
+    Calcule la masse totale de toute la grue et éventuellement d'un poids
+    pré: ne prend aucun paramètre
+    post: retourne la masse totale de la grue 
+    """
+    global data
+    masse_articulations_totale = 0
+    for i in range(len(data["Grue"])):
+        masse_articulations_totale += data["Grue"][str(i)]["masse"]
+    return masse_articulations_totale
+
+def longueurs_bases_trapeze(longueur_barge, angles):
     """
     Calcule la longueur du côté gauche et droit qui est immergée
-    Pré:    aire_immergee -> int
-            longueur_barge -> int
+    Pré:    longueur_barge -> int
             angles -> list
     Post: retourne une liste: [longueur_gauche, longueur_droite]
     """
     min_angle = min(angles)
-    grande_base = aire_immergee/longueur_barge + (longueur_barge*math.tan(min_angle))/2
-    petite_base = aire_immergee/longueur_barge - (longueur_barge*math.tan(min_angle))/2
+    grande_base = enfoncement(longueur_barge) + (longueur_barge*math.tan(min_angle))/2
+    petite_base = enfoncement(longueur_barge) - (longueur_barge*math.tan(min_angle))/2
     return [petite_base, grande_base]
 
 def centre_poussee(longueurs_immergees, longueur_barge, theta):
     lc = (longueur_barge * (longueurs_immergees[1]+2*longueurs_immergees[0]))/(3*(longueurs_immergees[1]+longueurs_immergees[0]))
     hc = (longueurs_immergees[1]**2 + longueurs_immergees[1]*longueurs_immergees[0] + longueurs_immergees[0]**2)/(3*(longueurs_immergees[1]+longueurs_immergees[0]))
     pos_x_prime = -(longueur_barge)/2 + lc
-    pos_y_prime = -enfoncement(somme_masses(), longueur_barge) + hc
+    pos_y_prime = -enfoncement(masse_totale(), longueur_barge) + hc
     pos_x = pos_x_prime*math.cos(theta) - pos_y_prime*math.sin(theta)
     return pos_x
 
+def couple_redressement(centre_masse, data, theta):
+    return gravite(masse_totale()) * (centre_poussee(longueurs_bases_trapeze(data["Barge"]["Longueur"], theta)) - centre_masse[0])
+
+#def couple_destabilisateur():
+
+# ======================= CENTRES DE MASSES =======================
+
 def centre_masse_barge(data):
-    CMx = data["Barge"]["Masse"]*((data["Barge"]["Longueur"])/2)
-    CMy = data["Barge"]["Masse"]*((data["Barge"]["Hauteur"])/2)
-    return (CMx, CMy)
+    """
+    Cette fonction calcule le centre de masse dans un plan 2d de la barge et change l'axe oxy utilisé (x: centre de masse, y: enfoncement barge)
+    Pré: prend une liste avec les données de la barge
+    Post: Retourne un tuple avec les coordonnées du centre de masse
+    """
+    logger.info("Début du calcul du centre de masse de la barge")
+    CMx = (data["Barge"]["Longueur"])/2
+    CMy = (data["Barge"]["Hauteur"])/2
+    #Changement de base pour le mettre au centre de masse de la barge
+    #(centre_masse_barge[0]-data["Barge"]["Longueur"]/2, centre_masse_barge[1]-enfoncement(data["Barge"]["Longueur"]))
+    CMx = CMx-data["Barge"]["Longueur"]/2
+    CMy = CMy-enfoncement(data["Barge"]["Longueur"])
+    
+    CM = (round(CMx, 4), round(CMy, 4))
+
+    logger.success(f"Le centre de masse de la barge trouvé est {CM}[m]")
+    return CM
 
 def centre_masse_grue(articulations, angles):
     """
-    Calcule le centre de masse dans un plan 2d de la grue dans un axe oxy dont le centre est le début de la base
+    Calcule le centre de masse dans un plan 2d de la grue et change l'axe oxy utilisé (x: centre de masse, y: enfoncement barge)
     Pré: Récupère un dictionnaire sous la forme {'0': {'longueur': 0, 'largeur': 0, 'masse': 0}...}
             et une liste d'angles exprimés en radian contenant n-1 éléments du dictionnaire
     Post: retourne un tuple décrivant la position x,y du centre de masse
@@ -84,7 +125,7 @@ def centre_masse_grue(articulations, angles):
                 Ey.append(articulations[str(i)]["longueur"]*math.sin(angles[i-1])) 
             except IndexError:
                 logger.error(f"Le nombre d'angle n'est pas correct, il faut un total de {len(articulations)-1} angle(s).")
-                return
+                exit()
         # Dans ces listes sont stockés les centres de masse
         Cx = [extr_socle["x"]]
         Cy = [extr_socle["y"]]
@@ -114,8 +155,18 @@ def centre_masse_grue(articulations, angles):
             masse_totale += articulations[str(i)]["masse"]
             pos_massX += articulations[str(i)]["masse"] * Cx[i]
             pos_massY += articulations[str(i)]["masse"] * Cy[i]
-        # Applique la formule du centre de masse et arrondis à 4 chiffres après la virgule
-        CM = (round(pos_massX/masse_totale, 4), round(pos_massY/masse_totale, 4))
+
+        # Applique la formule du centre de masse
+        CMx = pos_massX/masse_totale
+        CMy = pos_massY/masse_totale
+
+        #Changement de base pour le mettre au centre de masse de la barge
+        #(centre_masse_grue[0]+data["Barge"]["Declage_grue"]-data["Barge"]["Longueur"]/2, centre_masse_grue[1]+data["Barge"]["Hauteur"]-enfoncement(data["Barge"]["Longueur"]))
+        CMx = CMx+data["Barge"]["Declage_grue"]-data["Barge"]["Longueur"]/2
+        CMy = CMy+data["Barge"]["Hauteur"]-enfoncement(data["Barge"]["Longueur"])
+
+        # Arrondis à 4 chiffres après la virgule
+        CM = (round(CMx, 4), round(CMy, 4))
         logger.success(f"Le centre de masse de la grue trouvé est {CM}[m]")
         return CM
     except KeyError as e:
@@ -123,14 +174,22 @@ def centre_masse_grue(articulations, angles):
         return
 
 def centre_masse_total(centre_masse_grue,centre_masse_barge, data):
-    centre_masse_grue_decale = (centre_masse_grue[0]+data["Barge"]["Declage_grue"]-data["Barge"]["Longueur"]/2, centre_masse_grue[1]+data["Barge"]["Hauteur"]-enfoncement(data["Barge"]["Longueur"]))
-    centre_masse_barge_decale = (centre_masse_barge[0]-data["Barge"]["Longueur"]/2, centre_masse_barge[1]-enfoncement(data["Barge"]["Longueur"]))
-    masse_articulations_totale = 0
-    for i in range(len(data["Grue"])):
-        masse_articulations_totale += data["Grue"][str(i)]["masse"]
-    CMx = (centre_masse_barge_decale[0] * data["Barge"]["Masse"] + centre_masse_grue_decale[0] * masse_articulations_totale)/(masse_articulations_totale + data["Barge"]["Masse"])
-    CMy = (centre_masse_barge_decale[1] * data["Barge"]["Masse"] + centre_masse_grue_decale[1] * masse_articulations_totale)/(masse_articulations_totale + data["Barge"]["Masse"])
-    return (CMx, CMy)
+    """
+    Cette fonction calcule le centre de masse de l'ensemble de la structure
+    Pré: Prend un tuple avec les coordonnées du CM de la grue
+        Prend un tuple avec les coordonnées du CM de la barge
+        Prend une liste avec les données de la barge
+    Post: Retourne un tuple avec les coordonnées du centre de masse
+    """
+    # Applique la formule générale du centre de masse pour les composantes x et y
+    CMx = (centre_masse_barge[0] * data["Barge"]["Masse"] + centre_masse_grue[0] * masse_articulations())/(masse_articulations() + data["Barge"]["Masse"])
+    CMy = (centre_masse_barge[1] * data["Barge"]["Masse"] + centre_masse_grue[1] * masse_articulations())/(masse_articulations() + data["Barge"]["Masse"])
+    # Arrondis à 4 chiffres après la virgule
+    CM = (round(CMx, 4), round(CMy, 4))
+    logger.success(f"Le centre de masse total est {CM}[m]")
+    return CM
+
+# =================================================================
 
 def angles_immersion_soulevement(hauteur_enfoncement, hauteur_barge, longueur_barge):
     """
@@ -154,7 +213,7 @@ def aire_immergee(longueur_barge, hauteur_enfoncement):
     return longueur_barge * hauteur_enfoncement
 
 
-print(centre_masse_total(centre_masse_grue(data["Grue"], [0,0]), centre_masse_barge(data),data))
+centre_masse_total(centre_masse_grue(data["Grue"], [math.pi/8,-math.pi/4, 0]), centre_masse_barge(data),data)
 
 xpoints = np.array([0, 7])
 ypoints = np.array([3, 3])
