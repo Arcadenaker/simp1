@@ -6,6 +6,7 @@ Largeur = 0.6
 Hauteur = 0.15
 Masse = 1.5
 Declage_grue = 0.2
+ConstanteAmortissement = 5
 
 [Grue]
 0 = {longueur = 0.2, largeur = 0.05, masse = 0.25} #Socle
