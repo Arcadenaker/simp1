@@ -3,6 +3,8 @@ import math
 import tomllib
 from loguru import logger
 import matplotlib.pyplot as plt
+# Ajouter l'import pour la fonction bisect
+from scipy.optimize import bisect
 
 #======== CONSTANTES ========
 FICHIER_TOML = "data.toml"
@@ -32,9 +34,8 @@ def angles_immersion_soulevement():
     Pré: /
     Post: retourne une liste avec les deux angles
     """
-    angle_immersion = math.atan((2*(data["Barge"]["Hauteur"]-enfoncement()))/data["Barge"]["Longueur"])
-    angle_soulevement = math.atan((2*enfoncement())/data["Barge"]["Longueur"])
-    return [angle_immersion, angle_soulevement]
+    angles_max = [math.atan((2*(data["Barge"]["Hauteur"]-enfoncement()))/data["Barge"]["Longueur"]),math.atan((2*enfoncement())/data["Barge"]["Longueur"])]
+    return min(angles_max)
 
 def enfoncement():
     """ 
@@ -67,57 +68,6 @@ def masse_articulations():
         masse_articulations_totale += data["Grue"][str(i)]["masse"]
     return masse_articulations_totale
 
-def longueurs_bases_trapeze():
-    """
-    Calcule la longueur du côté gauche et droit qui est immergée
-    Pré:    longueur_barge -> int
-            angles -> list
-    Post: retourne une liste: [longueur_gauche, longueur_droite]
-    """
-    min_angle = min(angles_immersion_soulevement())
-    grande_base = enfoncement() + (data["Barge"]["Longueur"]*math.tan(min_angle))/2
-    petite_base = enfoncement() - (data["Barge"]["Longueur"]*math.tan(min_angle))/2
-    return [petite_base, grande_base]
-
-def centre_poussee(theta):
-    """
-    Calcule la position du centre de poussée d'une barge immergée.
-
-    Pré: theta (float) : Angle d'inclinaison de la barge en radians.
-    Post: float : Position horizontale du centre de poussée par rapport à l'origine du repère.
-    """
-    longueurs_immergees = longueurs_bases_trapeze()
-    lc = (data["Barge"]["Longueur"] * (longueurs_immergees[1]+2*longueurs_immergees[0]))/(3*(longueurs_immergees[1]+longueurs_immergees[0]))
-    hc = (longueurs_immergees[1]**2 + longueurs_immergees[1]*longueurs_immergees[0] + longueurs_immergees[0]**2)/(3*(longueurs_immergees[1]+longueurs_immergees[0]))
-    pos_x_prime = -(data["Barge"]["Longueur"])/2 + lc
-    pos_y_prime = -enfoncement() + hc
-    pos_x = pos_x_prime*math.cos(theta) - pos_y_prime*math.sin(theta)
-    return pos_x
-
-def couple_redressement(theta, angles_articulations):
-    CMgrue = centre_masse_grue(angles_articulations)
-    return gravite(masse_totale()) * (centre_poussee(longueurs_bases_trapeze(data["Barge"]["Longueur"], theta)) - CMgrue[0])
-
-def couple_destabilisateur(angles_articulations):
-    return gravite(masse_articulations()) * centre_masse_grue(angles_articulations)
-
-def inertie():
-    return (masse_totale()*(2*data["Barge"]["Hauteur"]))/12
-
-def couple_amortissement(omega):
-    return -data["Barge"]["ConstanteAmortissement"]*omega
-
-"""
-step = 0.01
-t = np.arange(0, 30, step)
-omega = np.empty_like(t)
-theta = np.empty_like(t)
-for i in range(len(t)‐1):
-    dt = step
-
-
-"""
-
 # ======================= CENTRES DE MASSES =======================
 
 def centre_masse_barge():
@@ -142,8 +92,7 @@ def centre_masse_barge():
 def centre_masse_grue(angles):
     """
     Calcule le centre de masse dans un plan 2d de la grue et change l'axe oxy utilisé (x: centre de masse, y: enfoncement barge)
-    Pré: Récupère un dictionnaire sous la forme {'0': {'longueur': 0, 'largeur': 0, 'masse': 0}...}
-            et une liste d'angles exprimés en radian contenant n-1 éléments du dictionnaire
+    Pré: Récupère une liste d'angles exprimés en radian contenant n-1 éléments du dictionnaire
     Post: retourne un tuple décrivant la position x,y du centre de masse
     """
     try:
@@ -210,9 +159,7 @@ def centre_masse_grue(angles):
 def centre_masse_total(angles_articulations):
     """
     Cette fonction calcule le centre de masse de l'ensemble de la structure
-    Pré: Prend un tuple avec les coordonnées du CM de la grue
-        Prend un tuple avec les coordonnées du CM de la barge
-        Prend une liste avec les données de la barge
+    Pré: Récupère une liste d'angles exprimés en radian contenant n-1 éléments du dictionnaire
     Post: Retourne un tuple avec les coordonnées du centre de masse
     """
     CMgrue = centre_masse_grue(angles_articulations)
@@ -227,18 +174,55 @@ def centre_masse_total(angles_articulations):
 
 # =================================================================
 
-def aire_immergee():
+def centre_poussee(theta):
     """
-    Calcule simplement l'aire immergée sous l'eau
-    Pré: /
-    Post: retourne un int (aire)
+    Calcule la position du centre de poussée d'une barge immergée.
+
+    Pré: theta (float) : Angle d'inclinaison de la barge en radians.
+    Post: float : Position horizontale du centre de poussée par rapport à l'origine du repère.
     """
-    return data["Barge"]["Longueur"] * enfoncement()
+    return (math.sin((theta)) * data["Barge"]["Longueur"]**2) / (12 * enfoncement() * ((math.cos(theta)) ** 2))
+
+def couple_redressement(theta, angles_articulations):
+    CMgrue = centre_masse_grue(angles_articulations)
+    return gravite(masse_totale()) * abs(centre_poussee(theta) - CMgrue[0])
+
+def couple_destabilisateur(angles_articulations):
+    CMgrue = centre_masse_grue(angles_articulations)
+    return -gravite(masse_articulations()) * CMgrue[0]
+
+def inertie():
+    return (masse_totale()*(data["Barge"]["Longueur"])**2+data["Barge"]["Hauteur"]**2)/12
 
 
-centre_masse_total([math.pi/8,-math.pi/4,0])
+step = 0.001
+end = 9
+t = np.arange(0, end, step)
+theta = np.empty_like(t)
+omega = np.empty_like(t)
+accelerationAngulaire = np.empty_like(t)
+theta_max = np.empty_like(t)
 
-xpoints = np.array([0, 7])
-ypoints = np.array([3, 3])
-plt.plot(xpoints, ypoints, '--')
-#plt.show()
+angles = [0,math.pi/4,0,-math.pi/8]
+CMgrue = centre_masse_grue(angles)
+theta[0] = 0
+dt = step
+for x in range(len(t)-1):
+    dt = step
+    totalCouples = couple_destabilisateur(angles) + couple_redressement(theta[x], angles)
+    accelerationAngulaire[x] = (-data["Barge"]["ConstanteAmortissement"] * omega[x] + totalCouples) / inertie()
+    omega[x+1] = omega[x] + accelerationAngulaire[x] * dt
+    theta[x+1] = theta[x] + omega[x+1] * dt
+
+
+plt.figure(1)
+plt.plot(t, theta, label="θ", color="green", linewidth=1)
+max_angle_array = np.full_like(t, theta_max)
+
+plt.plot(t, max_angle_array, "--", label="θ min", color="purple", linewidth=1)
+plt.xlabel("temps (s)")
+plt.ylabel("angle (°)")
+plt.title("Angle/temps")
+plt.annotate(round(theta[-1], 3), (27, theta[-1] + 0.7))
+plt.legend(prop={'size': 6})
+plt.show()
