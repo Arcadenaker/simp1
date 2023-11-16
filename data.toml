@@ -4,14 +4,13 @@
 Longueur = 0.6
 Largeur = 0.6
 Hauteur = 0.15
-Masse = 1.2
+Masse = 1.9
 Declage_grue = 0.2
-ConstanteAmortissement = 0.25
+ConstanteAmortissement = 0.3
 
 [Grue]
 0 = {longueur = 0.3, largeur = 0.08, masse = 0.05} #Socle
 1 = {longueur = 0.3, largeur = 0.08, masse = 0.05}
 2 = {longueur = 0.3, largeur = 0.08, masse = 0.05}
 3 = {longueur = 0.3, largeur = 0.08, masse = 0.05}
-4 = {longueur = 0.3, largeur = 0.08, masse = 0.05}
-5 = {longueur = 0.1, largeur = 0.1, masse = 0.2}
+4 = {longueur = 0.1, largeur = 0.1, masse = 0.1}
