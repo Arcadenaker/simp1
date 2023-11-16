@@ -68,6 +68,17 @@ def masse_articulations():
         masse_articulations_totale += data["Grue"][str(i)]["masse"]
     return masse_articulations_totale
 
+def longueurs_bases_trapeze(theta):
+    """
+    Calcule la longueur du côté gauche et droit qui est immergée
+    Pré:    longueur_barge -> int
+            angles -> list
+    Post: retourne une liste: [longueur_gauche, longueur_droite]
+    """
+    grande_base = enfoncement() + (data["Barge"]["Longueur"]*math.tan(theta))/2
+    petite_base = enfoncement() - (data["Barge"]["Longueur"]*math.tan(theta))/2
+    return [petite_base, grande_base]
+
 # ======================= CENTRES DE MASSES =======================
 
 def centre_masse_barge():
@@ -183,40 +194,38 @@ def centre_poussee(theta):
     """
     return (math.sin((theta)) * data["Barge"]["Longueur"]**2) / (12 * enfoncement() * ((math.cos(theta)) ** 2))
 
-def couple_redressement(theta, angles_articulations):
-    CMgrue = centre_masse_grue(angles_articulations)
-    return gravite(masse_totale()) * abs(centre_poussee(theta) - CMgrue[0])
-
-def couple_destabilisateur(angles_articulations):
-    CMgrue = centre_masse_grue(angles_articulations)
-    return -gravite(masse_articulations()) * CMgrue[0]
-
 def inertie():
     return (masse_totale()*(data["Barge"]["Longueur"])**2+data["Barge"]["Hauteur"]**2)/12
 
-
-step = 0.001
-end = 9
+step = 0.00001
+end = 3
 t = np.arange(0, end, step)
 theta = np.empty_like(t)
 omega = np.empty_like(t)
 accelerationAngulaire = np.empty_like(t)
 theta_max = np.empty_like(t)
 
-angles = [0,math.pi/4,0,-math.pi/8]
+angles = [0,0,-math.pi/4,0,0]
 CMgrue = centre_masse_grue(angles)
 theta[0] = 0
 dt = step
 for x in range(len(t)-1):
     dt = step
-    totalCouples = couple_destabilisateur(angles) + couple_redressement(theta[x], angles)
+    centrePoussee = centre_poussee(theta[x])
+    centreGravite = math.sin(theta[x]) * CMgrue[1]
+
+    coupleRedressement = gravite(masse_totale()) * abs(centrePoussee - centreGravite)
+    coupleDestabilisateur = -gravite(masse_articulations()) * CMgrue[0]
+    totalCouples = coupleDestabilisateur + coupleRedressement
+
     accelerationAngulaire[x] = (-data["Barge"]["ConstanteAmortissement"] * omega[x] + totalCouples) / inertie()
     omega[x+1] = omega[x] + accelerationAngulaire[x] * dt
     theta[x+1] = theta[x] + omega[x+1] * dt
 
 
 plt.figure(1)
-plt.plot(t, theta, label="θ", color="green", linewidth=1)
+plt.plot(t, np.degrees(theta), label="θ", color="green", linewidth=1)
+theta_max = -angles_immersion_soulevement()
 max_angle_array = np.full_like(t, theta_max)
 
 plt.plot(t, max_angle_array, "--", label="θ min", color="purple", linewidth=1)
