@@ -207,8 +207,8 @@ for x in range(len(t)-1):
     coupleDestabilisateur = -gravite(masse_articulations()) * CMgrue[0]
     totalCouples = coupleDestabilisateur + coupleRedressement
 
-    accelerationAngulaire[x] = (-data["Barge"]["ConstanteAmortissement"] * omega[x] + totalCouples) / inertie()
-    omega[x+1] = omega[x] + accelerationAngulaire[x] * dt
+    accelerationAngulaire[x+1] = (-data["Barge"]["ConstanteAmortissement"] * omega[x] + totalCouples) / inertie()
+    omega[x+1] = omega[x] + accelerationAngulaire[x+1] * dt
     theta[x+1] = theta[x] + omega[x+1] * dt
 
 
@@ -222,5 +222,24 @@ plt.xlabel("temps (s)")
 plt.ylabel("angle (°)")
 plt.title("Angle/temps")
 plt.annotate(round(theta[-1], 3), (27, theta[-1] + 0.7))
+plt.legend(prop={'size': 6})
+plt.show()
+
+
+
+
+plt.plot(t, np.rad2deg(theta), label="ω", color="green", linewidth=1)
+plt.xlabel("temps (s)")
+plt.ylabel("vitesse (°/s)")
+plt.title("Vitesse/temps")
+plt.legend(prop={'size': 6})
+plt.show()
+
+
+
+plt.plot(t, np.rad2deg(accelerationAngulaire), label="α", color="green", linewidth=1)
+plt.xlabel("temps (s)")
+plt.ylabel("accélération (°/s^2)")
+plt.title("Accélération/temps")
 plt.legend(prop={'size': 6})
 plt.show()
