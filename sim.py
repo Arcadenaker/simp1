@@ -65,7 +65,6 @@ def masse_articulations():
     for i in range(len(data["Grue"])):
         masse_articulations_totale += data["Grue"][str(i)]["masse"]
     return masse_articulations_totale
-    return [petite_base, grande_base]
 
 # ======================= CENTRES DE MASSES =======================
 
@@ -192,7 +191,7 @@ t = np.arange(0, end, step)
 theta = np.empty_like(t)
 omega = np.empty_like(t)
 accelerationAngulaire = np.empty_like(t)
-theta_max = np.empty_like(t)
+max_angle_array = np.full_like(t, -angles_immersion_soulevement())
 
 angles = [0,math.pi/4,-math.pi/2,0]
 CMgrue = centre_masse_grue(angles)
@@ -212,11 +211,8 @@ for x in range(len(t)-1):
     theta[x+1] = theta[x] + omega[x+1] * dt
 
 
-plt.figure(1)
-plt.plot(t, np.degrees(theta), label="θ", color="green", linewidth=1)
-theta_max = -angles_immersion_soulevement()
-max_angle_array = np.full_like(t, theta_max)
 
+plt.plot(t, np.degrees(theta), label="θ", color="green", linewidth=1)
 plt.plot(t, np.degrees(max_angle_array), "--", label="θ min", color="purple", linewidth=1)
 plt.xlabel("temps (s)")
 plt.ylabel("angle (°)")
@@ -226,15 +222,12 @@ plt.legend(prop={'size': 6})
 plt.show()
 
 
-
-
 plt.plot(t, np.rad2deg(theta), label="ω", color="green", linewidth=1)
 plt.xlabel("temps (s)")
 plt.ylabel("vitesse (°/s)")
 plt.title("Vitesse/temps")
 plt.legend(prop={'size': 6})
 plt.show()
-
 
 
 plt.plot(t, np.rad2deg(accelerationAngulaire), label="α", color="green", linewidth=1)
