@@ -116,7 +116,7 @@ def centre_masse_grue(angles):
             temp_Cx = 0
             temp_Cy = 0
             for u in range(i+1): # Boucle for pour faire la somme et calculer toutes les articulations
-                if i == u: # Si on arrive à l'articulation où l'on cherche le centre de masse, on divise l'extrémité par 2 pour obtenir centre de l'articulation
+                if i == u: # Si on arrive à l'articulation où l'on cherche le CM, on ajoute les (x,y) de toutes les extrémités précédentes + 1/2 de celle qu'on cherche le CM
                     temp_Cx += Ex[u]/2
                     temp_Cy += Ey[u]/2
                     Cx.append(temp_Cx)
@@ -125,15 +125,15 @@ def centre_masse_grue(angles):
                 temp_Cx += Ex[u] # Sinon on additionne simplement les extrémités
                 temp_Cy += Ey[u]
 
-        pos_massX = 0 # Masse * postion pour tous les centres de masse
+        pos_massX = 0
         pos_massY = 0
 
-        for i in range(len(Cx)):
-            pos_massX += data["Articulations"][str(i)]["masse"] * Cx[i] #Applique la formule du numérateur pour calculer le centre de masse (sans le contre-poids)
+        for i in range(len(Cx)): # Boucle qui va appliquer masse * position (numérateur formule CM) sans le contre-poids
+            pos_massX += data["Articulations"][str(i)]["masse"] * Cx[i]
             pos_massY += data["Articulations"][str(i)]["masse"] * Cy[i]
 
-        CMx_contre_poids = -data["ContrePoids"]["Longueur"]*math.sin(angles[0])/2 # Le centre de masse (en x) du contre-poids est moins sa longueur * sin de l'angle de la première articulation, le tout divisé par 2
-        CMy_contre_poids = data["Articulations"]["1"]["longueur"] - data["ContrePoids"]["Longueur"]*math.cos(angles[0])/2 # Le centre de masse (en y) du contre-poids est la hauteur du socle moins la longueur du contre-poids/2
+        CMx_contre_poids = -data["ContrePoids"]["Longueur"]*math.cos(angles[0])/2 # Le centre de masse (en x) du contre-poids est moins sa longueur * sin de l'angle de la première articulation, le tout divisé par 2
+        CMy_contre_poids = data["Articulations"]["0"]["longueur"] - data["ContrePoids"]["Longueur"]*math.sin(angles[0])/2 # Le centre de masse (en y) du contre-poids est la hauteur du socle moins la longueur du contre-poids/2
 
         pos_massX += CMx_contre_poids * data["ContrePoids"]["Masse"]
         pos_massY += CMy_contre_poids * data["ContrePoids"]["Masse"]
@@ -193,8 +193,10 @@ omega = np.empty_like(t)
 accelerationAngulaire = np.empty_like(t)
 max_angle_array = np.full_like(t, -angles_immersion_soulevement())
 
-angles = [0,math.pi/4,-math.pi/2,0]
+angles = [math.pi/8,-math.pi/8,0,0] # Angles d'inclinaison des articulations
+
 CMgrue = centre_masse_grue(angles)
+
 theta[0] = 0
 dt = step
 for x in range(len(t)-1):
