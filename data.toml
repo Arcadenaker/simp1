@@ -1,4 +1,4 @@
-#Unités: [m], [kg]
+# Unités utilisées: [m], [kg]
 
 [Barge]
 Longueur = 0.6
@@ -8,7 +8,13 @@ Masse = 5
 Declage_grue = 0.2
 ConstanteAmortissement = 0.3
 
-[Grue]
+[ContrePoids]
+Masse = 0.8
+# Pour sa longueur, il faut mettre la première articulation 
+# à l'horizontale et mesurer ce qui dépasse à l'arrière de la grue
+Longueur = 0.15
+
+[Articulations]
 0 = {longueur = 0.3, largeur = 0.08, masse = 0.05} #Socle
 1 = {longueur = 0.3, largeur = 0.08, masse = 0.05}
 2 = {longueur = 0.3, largeur = 0.08, masse = 0.05}

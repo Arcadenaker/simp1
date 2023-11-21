@@ -9,8 +9,7 @@ FICHIER_TOML = "data.toml"
 DENSITE_EAU = 997 #[kg/m³]
 #============================
 
-#Lecture du fichier toml avec les configurations de la grue
-try:
+try: #Lecture du fichier toml avec les configurations de la grue
     tomlFile = open(FICHIER_TOML, "rb")
     data = tomllib.load(tomlFile)
     logger.debug("La lecture de data.toml a été effectuée avec succès")
@@ -50,9 +49,9 @@ def masse_totale():
     post: retourne la masse totale de la structure 
     """
     sum = 0
-    for m in range(len(data["Grue"])):
-        sum += int(data["Grue"][str(m)]["masse"])
-    sum += data["Barge"]["Masse"]
+    for m in range(1,len(data["Articulations"])-1):
+        sum += int(data["Articulations"][str(m)]["masse"])
+    sum += data["Barge"]["Masse"] + data["ContrePoids"]["Masse"]
     return sum
 
 def masse_articulations():
@@ -62,8 +61,9 @@ def masse_articulations():
     post: retourne la masse totale de la grue 
     """
     masse_articulations_totale = 0
-    for i in range(len(data["Grue"])):
-        masse_articulations_totale += data["Grue"][str(i)]["masse"]
+    for i in range(len(data["Articulations"])):
+        masse_articulations_totale += data["Articulations"][str(i)]["masse"]
+    masse_articulations_totale += data["ContrePoids"]["Masse"]
     return masse_articulations_totale
 
 # ======================= CENTRES DE MASSES =======================
@@ -78,9 +78,8 @@ def centre_masse_barge():
     logger.info("Début du calcul du centre de masse de la barge")
     CMx = (data["Barge"]["Longueur"])/2
     CMy = (data["Barge"]["Hauteur"])/2
-    #Changement de base pour le mettre au centre de masse de la barge
-    #(centre_masse_barge[0]-data["Barge"]["Longueur"]/2, centre_masse_barge[1]-enfoncement(data["Barge"]["Longueur"]))
-    CMx = CMx-data["Barge"]["Longueur"]/2
+    
+    CMx = CMx-data["Barge"]["Longueur"]/2 # Changement de repère pour le mettre au centre de la barge et à hauteur de l'enfoncement
     CMy = CMy-enfoncement()
     
     CM = (CMx, CMy)
@@ -97,58 +96,54 @@ def centre_masse_grue(angles):
     """
     try:
         logger.info("Début du calcul du centre de masse de la grue")
-        extr_socle = {"x": data["Grue"]["0"]["largeur"]/2, "y": data["Grue"]["0"]["longueur"]/2}
+        extr_socle = {"x": data["Articulations"]["0"]["largeur"]/2, "y": data["Articulations"]["0"]["longueur"]} # La longueur du socle est la hauteur (y) et la largeur/2 le centre du socle (x)
         # Initialise les coordonnées des extrémités (avec le socle)
         Ex = [extr_socle["x"]]
         Ey = [extr_socle["y"]]
         # Calcule le x,y de l'extrémité de chaque articulations et le met dans Ex/Ey
-        for i in range(1,len(data["Grue"])):
+        for i in range(1,len(data["Articulations"])):
             try:
-                Ex.append(data["Grue"][str(i)]["longueur"]*math.cos(angles[i-1]))
-                Ey.append(data["Grue"][str(i)]["longueur"]*math.sin(angles[i-1])) 
+                Ex.append(data["Articulations"][str(i)]["longueur"]*math.cos(angles[i-1]))
+                Ey.append(data["Articulations"][str(i)]["longueur"]*math.sin(angles[i-1])) 
             except IndexError:
                 logger.error(f"Le nombre d'angle n'est pas correct, il faut un total de {len(data['Grue'])-1} angle(s).")
                 exit()
-        # Dans ces listes sont stockés les centres de masse
-        Cx = [extr_socle["x"]]
-        Cy = [extr_socle["y"]]
-        # Pour toutes les articulations on calcule le centre de masse
-        # (Pas 0 (socle) car déjà calculé dans les tableaux)
-        for i in range(1,len(Ex)):
+        
+        Cx = [extr_socle["x"]] # Dans ces listes seront stockées les centres de masse, on y met déjà le centre de masse du socle
+        Cy = [extr_socle["y"]/2]
+        
+        for i in range(1,len(Ex)): # Pour toutes les articulations on calcule le centre de masse (Pas 0 (socle) car déjà calculé dans les tableaux)
             temp_Cx = 0
             temp_Cy = 0
-            # Boucle for pour faire la somme et calculer toutes les articulations
-            for u in range(i+1):
-                # Si on arrive à l'articulation où l'on cherche le centre de masse
-                # on divise l'extrémité par 2 pour obtenir centre de l'articulation
-                if i == u:
+            for u in range(i+1): # Boucle for pour faire la somme et calculer toutes les articulations
+                if i == u: # Si on arrive à l'articulation où l'on cherche le centre de masse, on divise l'extrémité par 2 pour obtenir centre de l'articulation
                     temp_Cx += Ex[u]/2
                     temp_Cy += Ey[u]/2
                     Cx.append(temp_Cx)
                     Cy.append(temp_Cy)
                     break
-                # Sinon on additionne simplement les extrémités
-                temp_Cx += Ex[u]
+                temp_Cx += Ex[u] # Sinon on additionne simplement les extrémités
                 temp_Cy += Ey[u]
-        masse_totale = 0
-        # Masse * postion pour tous les centres de masse
-        pos_massX = 0
+
+        pos_massX = 0 # Masse * postion pour tous les centres de masse
         pos_massY = 0
+
         for i in range(len(Cx)):
-            masse_totale += data["Grue"][str(i)]["masse"]
-            pos_massX += data["Grue"][str(i)]["masse"] * Cx[i]
-            pos_massY += data["Grue"][str(i)]["masse"] * Cy[i]
+            pos_massX += data["Articulations"][str(i)]["masse"] * Cx[i] #Applique la formule du numérateur pour calculer le centre de masse (sans le contre-poids)
+            pos_massY += data["Articulations"][str(i)]["masse"] * Cy[i]
 
-        # Applique la formule du centre de masse
-        CMx = pos_massX/masse_totale
-        CMy = pos_massY/masse_totale
+        CMx_contre_poids = -data["ContrePoids"]["Longueur"]*math.sin(angles[0])/2 # Le centre de masse (en x) du contre-poids est moins sa longueur * sin de l'angle de la première articulation, le tout divisé par 2
+        CMy_contre_poids = data["Articulations"]["1"]["longueur"] - data["ContrePoids"]["Longueur"]*math.cos(angles[0])/2 # Le centre de masse (en y) du contre-poids est la hauteur du socle moins la longueur du contre-poids/2
 
-        #Changement de base pour le mettre au centre de masse de la barge
-        #(centre_masse_grue[0]+data["Barge"]["Declage_grue"]-data["Barge"]["Longueur"]/2, centre_masse_grue[1]+data["Barge"]["Hauteur"]-enfoncement(data["Barge"]["Longueur"]))
-        CMx = CMx+data["Barge"]["Declage_grue"]-data["Barge"]["Longueur"]/2
+        pos_massX += CMx_contre_poids * data["ContrePoids"]["Masse"]
+        pos_massY += CMy_contre_poids * data["ContrePoids"]["Masse"]
+
+        CMx = pos_massX/masse_articulations() # Applique la formule du centre de masse
+        CMy = pos_massY/masse_articulations()
+
+        CMx = CMx+data["Barge"]["Declage_grue"]-data["Barge"]["Longueur"]/2 # Changement de repère pour le mettre au centre de la barge et à hauteur de l'enfoncement
         CMy = CMy+data["Barge"]["Hauteur"]-enfoncement()
 
-        # Arrondis à 4 chiffres après la virgule
         CM = (CMx,CMy)
         logger.success(f"Le centre de masse de la grue trouvé est {CM}[m]")
         return CM
@@ -164,11 +159,11 @@ def centre_masse_total(angles_articulations):
     """
     CMgrue = centre_masse_grue(angles_articulations)
     CMbarge = centre_masse_barge()
-    # Applique la formule générale du centre de masse pour les composantes x et y
-    CMx = (CMbarge[0] * data["Barge"]["Masse"] + CMgrue[0] * masse_articulations())/(masse_articulations() + data["Barge"]["Masse"])
-    CMy = (CMbarge[1] * data["Barge"]["Masse"] + CMgrue[1] * masse_articulations())/(masse_articulations() + data["Barge"]["Masse"])
-    # Arrondis à 4 chiffres après la virgule
-    CM = (round(CMx, 4), round(CMy, 4))
+    
+    CMx = (CMbarge[0] * data["Barge"]["Masse"] + CMgrue[0] * masse_articulations())/masse_totale() # Applique la formule générale du centre de masse pour les composantes x et y
+    CMy = (CMbarge[1] * data["Barge"]["Masse"] + CMgrue[1] * masse_articulations())/masse_totale()
+    
+    CM = (round(CMx, 4), round(CMy, 4)) # Arrondis à 4 chiffres après la virgule
     logger.success(f"Le centre de masse total est {CM}[m]")
     return CM
 
@@ -183,6 +178,11 @@ def centre_poussee(theta):
     return (math.sin((theta)) * data["Barge"]["Longueur"]**2) / (12 * enfoncement() * ((math.cos(theta)) ** 2))
 
 def inertie():
+    """
+    Calcule l'inertie de la barge
+    Pré: /
+    Post: Retourne un float qui donne l'inertie de la barge
+    """
     return (masse_totale()*(data["Barge"]["Longueur"])**2+data["Barge"]["Hauteur"]**2)/12
 
 step = 0.0001
