@@ -9,13 +9,13 @@ Declage_grue = 0.2
 ConstanteAmortissement = 0.3
 
 [ContrePoids]
-Masse = 1.2
+Masse = 1
 # Pour sa longueur, il faut mettre la première articulation 
 # à l'horizontale et mesurer ce qui dépasse à l'arrière de la grue
 Longueur = 0.1
 
 [Articulations]
-0 = {longueur = 0.3, largeur = 0.08, masse = 0.4} #Socle
+0 = {longueur = 0.25, largeur = 0.08, masse = 0.4} #Socle
 1 = {longueur = 0.25, largeur = 0.08, masse = 0.5}
 2 = {longueur = 0.2, largeur = 0.08, masse = 0.5}
 3 = {longueur = 0.1, largeur = 0.08, masse = 0.3}

@@ -97,11 +97,11 @@ def centre_masse_grue(angles):
     try:
         logger.info("Début du calcul du centre de masse de la grue")
         extr_socle = {"x": data["Articulations"]["0"]["largeur"]/2, "y": data["Articulations"]["0"]["longueur"]} # La longueur du socle est la hauteur (y) et la largeur/2 le centre du socle (x)
-        # Initialise les coordonnées des extrémités (avec le socle)
-        Ex = [extr_socle["x"]]
+        
+        Ex = [extr_socle["x"]] # Initialise les coordonnées des extrémités (avec le socle)
         Ey = [extr_socle["y"]]
-        # Calcule le x,y de l'extrémité de chaque articulations et le met dans Ex/Ey
-        for i in range(1,len(data["Articulations"])):
+        
+        for i in range(1,len(data["Articulations"])): # Calcule le x,y de l'extrémité de chaque articulations et le met dans Ex/Ey
             try:
                 Ex.append(data["Articulations"][str(i)]["longueur"]*math.cos(angles[i-1]))
                 Ey.append(data["Articulations"][str(i)]["longueur"]*math.sin(angles[i-1])) 
@@ -115,6 +115,7 @@ def centre_masse_grue(angles):
         for i in range(1,len(Ex)): # Pour toutes les articulations on calcule le centre de masse (Pas 0 (socle) car déjà calculé dans les tableaux)
             temp_Cx = 0
             temp_Cy = 0
+
             for u in range(i+1): # Boucle for pour faire la somme et calculer toutes les articulations
                 if i == u: # Si on arrive à l'articulation où l'on cherche le CM, on ajoute les (x,y) de toutes les extrémités précédentes + 1/2 de celle qu'on cherche le CM
                     temp_Cx += Ex[u]/2
@@ -185,8 +186,8 @@ def inertie():
     """
     return (masse_totale()*(data["Barge"]["Longueur"])**2+data["Barge"]["Hauteur"]**2)/12
 
-step = 0.0001
-end = 3
+step = 0.0001 # Le t+1 infinitésimal calculé
+end = 5 # Le t maximal représenté sur le graphe
 t = np.arange(0, end, step)
 theta = np.empty_like(t)
 omega = np.empty_like(t)
@@ -196,19 +197,21 @@ max_angle_array = np.full_like(t, -angles_immersion_soulevement())
 angles = [math.pi/8,-math.pi/8,0,0] # Angles d'inclinaison des articulations
 
 CMgrue = centre_masse_grue(angles)
+CMtotal = centre_masse_total(angles)
 
-theta[0] = 0
+theta[0] = 0 # S'initialise en theta
 dt = step
+
 for x in range(len(t)-1):
     dt = step
     centrePoussee = centre_poussee(theta[x])
-    centreGravite = math.sin(theta[x]) * CMgrue[1]
+    centreGravite = math.sin(theta[x]) * CMtotal[0]
 
     coupleRedressement = gravite(masse_totale()) * abs(centrePoussee - centreGravite)
     coupleDestabilisateur = -gravite(masse_articulations()) * CMgrue[0]
     totalCouples = coupleDestabilisateur + coupleRedressement
 
-    accelerationAngulaire[x+1] = (-data["Barge"]["ConstanteAmortissement"] * omega[x] + totalCouples) / inertie()
+    accelerationAngulaire[x+1] = (-data["Barge"]["ConstanteAmortissement"] * omega[x] + totalCouples) / inertie() # Application de la méthode de Gauss
     omega[x+1] = omega[x] + accelerationAngulaire[x+1] * dt
     theta[x+1] = theta[x] + omega[x+1] * dt
 
