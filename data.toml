@@ -1,12 +1,12 @@
 # Unités utilisées: [m], [kg]
 
 [Barge]
-Longueur = 0.6
+Longueur = 0.55
 Largeur = 0.6
-Hauteur = 0.15
-Masse = 5.5
-Declage_grue = 0.2
-ConstanteAmortissement = 0.3
+Hauteur = 0.17
+Masse = 9
+Declage_grue = 0.15
+ConstanteAmortissement = 0.2
 
 [ContrePoids]
 Masse = 1
@@ -15,8 +15,8 @@ Masse = 1
 Longueur = 0.1
 
 [Articulations]
-0 = {longueur = 0.25, largeur = 0.08, masse = 0.4} #Socle
-1 = {longueur = 0.25, largeur = 0.08, masse = 0.5}
-2 = {longueur = 0.2, largeur = 0.08, masse = 0.5}
-3 = {longueur = 0.1, largeur = 0.08, masse = 0.3}
-4 = {longueur = 0.1, largeur = 0.1, masse = 0.3}
+0 = {longueur = 0.3, largeur = 0.08, masse = 0.5} #Socle
+1 = {longueur = 0.3, largeur = 0.08, masse = 0.5}
+2 = {longueur = 0.3, largeur = 0.08, masse = 0.5}
+3 = {longueur = 0.1, largeur = 0.08, masse = 0.5}
+4 = {longueur = 0.05, largeur = 0.1, masse = 0.2}

@@ -194,7 +194,8 @@ omega = np.empty_like(t)
 accelerationAngulaire = np.empty_like(t)
 max_angle_array = np.full_like(t, -angles_immersion_soulevement())
 
-angles = [math.pi/8,-math.pi/8,0,0] # Angles d'inclinaison des articulations
+#angles = [math.pi/8,-math.pi/8,0,0] # Angles d'inclinaison des articulations
+angles = [0,0,0,0]
 
 CMgrue = centre_masse_grue(angles)
 CMtotal = centre_masse_total(angles)
@@ -216,7 +217,8 @@ for x in range(len(t)-1):
     theta[x+1] = theta[x] + omega[x+1] * dt
 
 
-
+# Premier graphique
+plt.subplot(3, 1, 1)
 plt.plot(t, np.degrees(theta), label="θ", color="green", linewidth=1)
 plt.plot(t, np.degrees(max_angle_array), "--", label="θ min", color="purple", linewidth=1)
 plt.xlabel("temps (s)")
@@ -224,20 +226,25 @@ plt.ylabel("angle (°)")
 plt.title("Angle/temps")
 plt.annotate(round(theta[-1], 3), (27, theta[-1] + 0.7))
 plt.legend(prop={'size': 6})
-plt.show()
 
-
+# Deuxième graphique
+plt.subplot(3, 1, 2)
 plt.plot(t, np.rad2deg(theta), label="ω", color="green", linewidth=1)
 plt.xlabel("temps (s)")
 plt.ylabel("vitesse (°/s)")
 plt.title("Vitesse/temps")
 plt.legend(prop={'size': 6})
-plt.show()
 
-
+# Troisième graphique
+plt.subplot(3, 1, 3)
 plt.plot(t, np.rad2deg(accelerationAngulaire), label="α", color="green", linewidth=1)
 plt.xlabel("temps (s)")
 plt.ylabel("accélération (°/s^2)")
 plt.title("Accélération/temps")
 plt.legend(prop={'size': 6})
+
+# Ajuster l'espacement entre les graphiques pour éviter le chevauchement
+plt.tight_layout()
+
+# Afficher les graphiques
 plt.show()
