@@ -1,12 +1,14 @@
 # Unités utilisées: [m], [kg]
 
+Angles = [0,0,0,0]
+
 [Barge]
 Longueur = 0.55
 Largeur = 0.6
 Hauteur = 0.17
 Masse = 9
 Declage_grue = 0.15
-ConstanteAmortissement = 0.2
+ConstanteAmortissement = 0.6
 
 [ContrePoids]
 Masse = 1

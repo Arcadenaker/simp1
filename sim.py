@@ -194,11 +194,8 @@ omega = np.empty_like(t)
 accelerationAngulaire = np.empty_like(t)
 max_angle_array = np.full_like(t, -angles_immersion_soulevement())
 
-#angles = [math.pi/8,-math.pi/8,0,0] # Angles d'inclinaison des articulations
-angles = [0,0,0,0]
-
-CMgrue = centre_masse_grue(angles)
-CMtotal = centre_masse_total(angles)
+CMgrue = centre_masse_grue(data["Angles"])
+CMtotal = centre_masse_total(data["Angles"])
 
 theta[0] = 0 # S'initialise en theta
 dt = step
