@@ -170,13 +170,25 @@ def centre_masse_total(angles_articulations):
 
 # =================================================================
 
+def base_trapezes(theta):
+    hr = enfoncement() + data["Barge"]["Longueur"]/2 * math.tan(theta)
+    hl = enfoncement() - data["Barge"]["Longueur"]/2 * math.tan(theta)
+    return (hr, hl)
+
 def centre_poussee(theta):
     """
     Calcule la position du centre de poussée de la barge en fonction de théta
     Pré: L'angle d'inclinaison en radian de la barge (float)
     Post: Retourne position en x du centre de poussée par rapport à l'origine du repère.
     """
-    return (math.sin((theta)) * data["Barge"]["Longueur"]**2) / (12 * enfoncement() * ((math.cos(theta)) ** 2))
+    hr = base_trapezes(theta)[0]
+    hl = base_trapezes(theta)[1]
+    L = data["Barge"]["Longueur"]
+    x_sec = (L * (2*hl + hr))/(3 * (hl + hr)) - L/2
+    y_sec = (hr**2 + hr * hl + hl**2)/(3 * (hl + hr)) - enfoncement()
+    x_prim = x_sec * math.cos(theta) - y_sec * math.sin(theta)
+    y_prim = x_sec * math.sin(theta) + y_sec * math.cos(theta)
+    return (x_prim, y_prim)
 
 def inertie():
     """
@@ -187,7 +199,7 @@ def inertie():
     return (masse_totale()*(data["Barge"]["Longueur"])**2+data["Barge"]["Hauteur"]**2)/12
 
 step = 0.0001 # Le t+1 infinitésimal calculé
-end = 5 # Le t maximal représenté sur le graphe
+end = 6 # Le t maximal représenté sur le graphe
 t = np.arange(0, end, step)
 theta = np.empty_like(t)
 omega = np.empty_like(t)
@@ -202,10 +214,10 @@ dt = step
 
 for x in range(len(t)-1):
     dt = step
-    centrePoussee = centre_poussee(theta[x])
-    centreGravite = math.sin(theta[x]) * CMtotal[0]
+    centrePousseeX = centre_poussee(theta[x])[0] 
+    centreGraviteX = math.sin(theta[x]) * CMtotal[1] # Prend en compte la rotation du centre de masse total
 
-    coupleRedressement = gravite(masse_totale()) * abs(centrePoussee - centreGravite)
+    coupleRedressement = gravite(masse_totale()) * abs(centrePousseeX - centreGraviteX)
     coupleDestabilisateur = -gravite(masse_articulations()) * CMgrue[0]
     totalCouples = coupleDestabilisateur + coupleRedressement
 
