@@ -42,29 +42,25 @@ def enfoncement():
     """
     return masse_totale() / (DENSITE_EAU * data["Barge"]["Longueur"]**2)
 
-def masse_totale():
-    """
-    Calcule la masse totale de toute la structure
-    pré: ne prend aucun paramètre
-    post: retourne la masse totale de la structure 
-    """
-    sum = 0
-    for m in range(1,len(data["Articulations"])-1):
-        sum += int(data["Articulations"][str(m)]["masse"])
-    sum += data["Barge"]["Masse"] + data["ContrePoids"]["Masse"]
-    return sum
-
 def masse_articulations():
     """
     Calcule la masse totale de toute la grue et éventuellement d'un poids
     pré: ne prend aucun paramètre
     post: retourne la masse totale de la grue 
     """
-    masse_articulations_totale = 0
-    for i in range(len(data["Articulations"])):
+    masse_articulations_totale = 0 # Initialise la masse
+    for i in range(len(data["Articulations"])): # Additionne la masse de chaque articulation
         masse_articulations_totale += data["Articulations"][str(i)]["masse"]
-    masse_articulations_totale += data["ContrePoids"]["Masse"]
+    masse_articulations_totale += data["ContrePoids"]["Masse"] # Ajoute également le contrepoids
     return masse_articulations_totale
+
+def masse_totale():
+    """
+    Calcule la masse totale de toute la structure
+    pré: ne prend aucun paramètre
+    post: retourne la masse totale de la structure 
+    """
+    return masse_articulations() + data["Barge"]["Masse"]
 
 # ======================= CENTRES DE MASSES =======================
 
@@ -171,6 +167,10 @@ def centre_masse_total(angles_articulations):
 # =================================================================
 
 def base_trapezes(theta):
+    """
+    Calcule la base des trapèzes du volume immergé
+    Pré: Prend l'angle théta
+    """
     hr = enfoncement() + data["Barge"]["Longueur"]/2 * math.tan(theta)
     hl = enfoncement() - data["Barge"]["Longueur"]/2 * math.tan(theta)
     return (hr, hl)
@@ -186,8 +186,8 @@ def centre_poussee(theta):
     L = data["Barge"]["Longueur"]
     x_sec = (L * (2*hl + hr))/(3 * (hl + hr)) - L/2
     y_sec = (hr**2 + hr * hl + hl**2)/(3 * (hl + hr)) - enfoncement()
-    x_prim = x_sec * math.cos(theta) - y_sec * math.sin(theta)
-    y_prim = x_sec * math.sin(theta) + y_sec * math.cos(theta)
+    x_prim = x_sec * math.cos(theta) - y_sec * math.sin(theta) # Effectue la rotation pour l'axe x
+    y_prim = x_sec * math.sin(theta) + y_sec * math.cos(theta) # Effectue la rotation pour l'axe y
     return (x_prim, y_prim)
 
 def inertie():
@@ -206,13 +206,13 @@ omega = np.empty_like(t)
 accelerationAngulaire = np.empty_like(t)
 max_angle_array = np.full_like(t, -angles_immersion_soulevement())
 
-CMgrue = centre_masse_grue(data["Angles"])
-CMtotal = centre_masse_total(data["Angles"])
+CMgrue = centre_masse_grue(data["Angles"]) # Calcule le centre de masse de la grue en fonction des angles d'inclinaison des articulations
+CMtotal = centre_masse_total(data["Angles"]) # Calcule le centre de masse total en fonction des angles d'inclinaison des articulations
 
 theta[0] = 0 # S'initialise en theta
 dt = step
 
-for x in range(len(t)-1):
+for x in range(len(t)-1): # Boucle qui permet pour chaque dt de calculer les thétas
     dt = step
     centrePousseeX = centre_poussee(theta[x])[0] 
     centreGraviteX = math.sin(theta[x]) * CMtotal[1] # Prend en compte la rotation du centre de masse total
@@ -234,7 +234,7 @@ plt.xlabel("temps (s)")
 plt.ylabel("angle (°)")
 plt.title("Angle/temps")
 plt.annotate(round(theta[-1], 3), (27, theta[-1] + 0.7))
-plt.legend(prop={'size': 6})
+plt.legend(prop={'size': 5}, loc=4)
 
 # Deuxième graphique
 plt.subplot(3, 1, 2)

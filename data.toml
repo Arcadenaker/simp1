@@ -8,7 +8,7 @@ Largeur = 0.6
 Hauteur = 0.17
 Masse = 9
 Declage_grue = 0.15
-ConstanteAmortissement = 0.6
+ConstanteAmortissement = 0.7
 
 [ContrePoids]
 Masse = 1
