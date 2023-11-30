@@ -1,8 +1,11 @@
 import numpy as np
 import math
-import tomllib
-from loguru import logger
+import tomllib # Module qui permet d'utiliser les fichiers toml avec plus de facilité
+from loguru import logger # Module qui permet d'avoir un beau logging dans la console
 import matplotlib.pyplot as plt
+
+# Toutes les constantes qui peuvent être modifiées sont dans le fichier data.toml
+# pour une raison de simplicité pour ne pas devoir revenir dans le code à chaque fois
 
 #======== CONSTANTES ========
 FICHIER_TOML = "data.toml"
@@ -17,22 +20,15 @@ except tomllib.TOMLDecodeError as e:
     logger.error(f"Erreur dans data.toml: {e}")
     exit()
 
-def gravite(masse):
-    """
-    Calcule la force de garvité de la masse donnée
-    Pré: prend la masse en paramètre (int)
-    Post: retourne la force en [N] (int)
-    """
-    return masse * 9.81
-
 def angles_immersion_soulevement():
     """
     Calcule les angles d'immersion et de soulèvement
     Pré: /
     Post: retourne une liste avec les deux angles
     """
-    theta = [math.atan((data["Barge"]["Hauteur"]-enfoncement())/(data["Barge"]["Longueur"]/2)), math.atan(enfoncement()/(data["Barge"]["Longueur"]/2))]
-    return min(theta)
+    theta_max_1 = math.atan((data["Barge"]["Hauteur"]-enfoncement())/(data["Barge"]["Longueur"]/2))
+    theta_max_2 = math.atan(enfoncement()/(data["Barge"]["Longueur"]/2))
+    return min(theta_max_1, theta_max_2) # Retourne l'angle le plus petit qui provoquerait une immersion
 
 def enfoncement():
     """ 
@@ -40,7 +36,7 @@ def enfoncement():
     Pré:  /
     Post: retourne un int (hauteur de l'enfoncement)
     """
-    return masse_totale() / (DENSITE_EAU * data["Barge"]["Longueur"]**2)
+    return masse_totale() / (DENSITE_EAU * data["Barge"]["Longueur"]**2) # Applique la formule de notre modèle de physique
 
 def masse_articulations():
     """
@@ -60,9 +56,11 @@ def masse_totale():
     pré: ne prend aucun paramètre
     post: retourne la masse totale de la structure 
     """
-    return masse_articulations() + data["Barge"]["Masse"]
+    return masse_articulations() + data["Barge"]["Masse"] # La seule masse à ajouter est la masse de la barge
 
+# =================================================================
 # ======================= CENTRES DE MASSES =======================
+# =================================================================
 
 def centre_masse_barge():
     """
@@ -214,14 +212,15 @@ dt = step
 
 for x in range(len(t)-1): # Boucle qui permet pour chaque dt de calculer les thétas
     dt = step
+    
     centrePousseeX = centre_poussee(theta[x])[0] 
     centreGraviteX = math.sin(theta[x]) * CMtotal[1] # Prend en compte la rotation du centre de masse total
 
-    coupleRedressement = gravite(masse_totale()) * abs(centrePousseeX - centreGraviteX)
-    coupleDestabilisateur = -gravite(masse_articulations()) * CMgrue[0]
+    coupleRedressement = masse_totale() * 9.81 * abs(centrePousseeX - centreGraviteX)
+    coupleDestabilisateur = -masse_articulations() * 9.81 * CMgrue[0]
     totalCouples = coupleDestabilisateur + coupleRedressement
 
-    accelerationAngulaire[x+1] = (-data["Barge"]["ConstanteAmortissement"] * omega[x] + totalCouples) / inertie() # Application de la méthode de Gauss
+    accelerationAngulaire[x+1] = (-data["Barge"]["ConstanteAmortissement"] * omega[x] + totalCouples) / inertie() # Application de la méthode d'Euler explicite
     omega[x+1] = omega[x] + accelerationAngulaire[x+1] * dt
     theta[x+1] = theta[x] + omega[x+1] * dt
 
