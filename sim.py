@@ -168,6 +168,7 @@ def base_trapezes(theta):
     """
     Calcule la base des trapèzes du volume immergé
     Pré: Prend l'angle théta
+    Post: Retourne les deux côtés du trapèze
     """
     hr = enfoncement() + data["Barge"]["Longueur"]/2 * math.tan(theta)
     hl = enfoncement() - data["Barge"]["Longueur"]/2 * math.tan(theta)
@@ -182,7 +183,7 @@ def centre_poussee(theta):
     hr = base_trapezes(theta)[0]
     hl = base_trapezes(theta)[1]
     L = data["Barge"]["Longueur"]
-    x_sec = (L * (2*hl + hr))/(3 * (hl + hr)) - L/2
+    x_sec = (L * (2*hl + hr))/(3 * (hl + hr)) - L/2     # -L/v et -enfoncement() font le changement de repère
     y_sec = (hr**2 + hr * hl + hl**2)/(3 * (hl + hr)) - enfoncement()
     x_prim = x_sec * math.cos(theta) - y_sec * math.sin(theta) # Effectue la rotation pour l'axe x
     y_prim = x_sec * math.sin(theta) + y_sec * math.cos(theta) # Effectue la rotation pour l'axe y
@@ -197,7 +198,7 @@ def inertie():
     return (masse_totale()*(data["Barge"]["Longueur"])**2+data["Barge"]["Hauteur"]**2)/12
 
 step = 0.0001 # Le t+1 infinitésimal calculé
-end = 6 # Le t maximal représenté sur le graphe
+end = 5.5 # Le t maximal représenté sur le graphe
 t = np.arange(0, end, step) # Le tableau numpy avec tout les tmps 
 theta = np.empty_like(t)
 omega = np.empty_like(t)
@@ -217,8 +218,8 @@ for x in range(len(t)-1): # Boucle qui permet pour chaque dt de calculer les th�
     centrePousseeX = centre_poussee(theta[x])[0] 
     centreGraviteX = math.sin(theta[x]) * CMtotal[1] # Prend en compte la rotation du centre de masse total
 
-    coupleRedressement = masse_totale() * 9.81 * abs(centrePousseeX - centreGraviteX)
-    coupleDestabilisateur = -masse_articulations() * 9.81 * CMgrue[0]
+    coupleRedressement = masse_totale() * 9.81 * abs(centrePousseeX - centreGraviteX) # Cr
+    coupleDestabilisateur = -masse_articulations() * 9.81 * CMgrue[0] # Ca
     totalCouples = coupleDestabilisateur + coupleRedressement
 
     accelerationAngulaire[x+1] = (-data["Barge"]["ConstanteAmortissement"] * omega[x] + totalCouples) / inertie() # Application de la méthode d'Euler explicite
@@ -227,11 +228,10 @@ for x in range(len(t)-1): # Boucle qui permet pour chaque dt de calculer les th�
 logger.debug("Fin de la méthode d'Euler")
 
 
-# Créer une figure avec une taille personnalisée
-fig = plt.figure(figsize=(9, 7))
 
-# Premier graphique
-plt.subplot(3, 1, 1)
+fig = plt.figure(figsize=(9, 7)) # Donne une taille plus grande à la fenêtre du graphique
+
+plt.subplot(3, 1, 1) # Premier graphique
 plt.plot(t, np.degrees(theta), label="θ", color="green", linewidth=1)
 plt.plot(t, np.degrees(max_angle_array), "--", label="θ min", color="purple", linewidth=1)
 plt.xlabel("temps (s)")
@@ -241,8 +241,7 @@ plt.title("Angle/temps")
 plt.annotate(round(theta[-1], 3), (27, theta[-1] + 0.7))
 plt.legend(prop={'size': 6}, loc=4)
 
-# Deuxième graphique
-plt.subplot(3, 1, 2)
+plt.subplot(3, 1, 2) # Deuxième graphique
 plt.plot(t, np.rad2deg(theta), label="ω", color="green", linewidth=1)
 plt.xlabel("temps (s)")
 plt.ylabel("vitesse (°/s)")
@@ -250,8 +249,7 @@ plt.ylabel("vitesse (°/s)")
 plt.title("Vitesse/temps")
 plt.legend(prop={'size': 6})
 
-# Troisième graphique
-plt.subplot(3, 1, 3)
+plt.subplot(3, 1, 3) # Troisième graphique
 plt.plot(t, np.rad2deg(accelerationAngulaire), label="α", color="green", linewidth=1)
 plt.xlabel("temps (s)")
 plt.ylabel("accélération (°/s²)")
@@ -259,8 +257,6 @@ plt.ylabel("accélération (°/s²)")
 plt.title("Accélération/temps")
 plt.legend(prop={'size': 6})
 
-# Ajuster l'espacement entre les graphiques pour éviter le chevauchement
-plt.tight_layout()
+plt.tight_layout() # Ajuste l'espacement entre les graphiques pour éviter un chevauchement
 
-# Afficher les graphiques
-plt.show()
+plt.show() # Affiche les graphiques
