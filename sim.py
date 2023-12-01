@@ -81,7 +81,7 @@ def centre_masse_barge():
     logger.success(f"Le centre de masse de la barge trouvé est {CM}[m]")
     return CM
 
-def centre_masse_grue(angles):
+def centre_masse_grue(angles_articulations):
     """
     Cette fonction calcule le centre de masse dans un plan 2d de la grue.
 		(L'axe x est au niveau de l'eau et y milieu de la barge) 
@@ -97,10 +97,10 @@ def centre_masse_grue(angles):
         
         for i in range(1,len(data["Articulations"])): # Calcule le x,y de l'extrémité de chaque articulations et le met dans Ex/Ey
             try:
-                Ex.append(data["Articulations"][str(i)]["longueur"]*math.cos(angles[i-1]))
-                Ey.append(data["Articulations"][str(i)]["longueur"]*math.sin(angles[i-1])) 
+                Ex.append(data["Articulations"][str(i)]["longueur"]*math.cos(angles_articulations[i-1]))
+                Ey.append(data["Articulations"][str(i)]["longueur"]*math.sin(angles_articulations[i-1])) 
             except IndexError:
-                logger.error(f"Le nombre d'angle n'est pas correct, il faut un total de {len(data['Grue'])-1} angle(s).")
+                logger.error(f"Le nombre d'angle n'est pas correct, il faut un total de {len(data['Articulations'])-1} angle(s).")
                 exit()
         
         Cx = [extr_socle["x"]] # Dans ces listes seront stockées les centres de masse, on y met déjà le centre de masse du socle
@@ -127,8 +127,8 @@ def centre_masse_grue(angles):
             pos_massX += data["Articulations"][str(i)]["masse"] * Cx[i]
             pos_massY += data["Articulations"][str(i)]["masse"] * Cy[i]
 
-        CMx_contre_poids = -data["ContrePoids"]["Longueur"]*math.cos(angles[0])/2 # Le centre de masse (en x) du contre-poids est moins sa longueur * sin de l'angle de la première articulation, le tout divisé par 2
-        CMy_contre_poids = data["Articulations"]["0"]["longueur"] - data["ContrePoids"]["Longueur"]*math.sin(angles[0])/2 # Le centre de masse (en y) du contre-poids est la hauteur du socle moins la longueur du contre-poids/2
+        CMx_contre_poids = -data["ContrePoids"]["Longueur"]*math.cos(angles_articulations[0])/2 # Le centre de masse (en x) du contre-poids est moins sa longueur * sin de l'angle de la première articulation, le tout divisé par 2
+        CMy_contre_poids = data["Articulations"]["0"]["longueur"] - data["ContrePoids"]["Longueur"]*math.sin(angles_articulations[0])/2 # Le centre de masse (en y) du contre-poids est la hauteur du socle moins la longueur du contre-poids/2
 
         pos_massX += CMx_contre_poids * data["ContrePoids"]["Masse"]
         pos_massY += CMy_contre_poids * data["ContrePoids"]["Masse"]
@@ -198,7 +198,7 @@ def inertie():
 
 step = 0.0001 # Le t+1 infinitésimal calculé
 end = 6 # Le t maximal représenté sur le graphe
-t = np.arange(0, end, step)
+t = np.arange(0, end, step) # Le tableau numpy avec tout les tmps 
 theta = np.empty_like(t)
 omega = np.empty_like(t)
 accelerationAngulaire = np.empty_like(t)
@@ -210,6 +210,7 @@ CMtotal = centre_masse_total(data["Angles"]) # Calcule le centre de masse total 
 theta[0] = 0 # S'initialise en theta
 dt = step
 
+logger.debug("Début de la méthode d'Euler explicite")
 for x in range(len(t)-1): # Boucle qui permet pour chaque dt de calculer les thétas
     dt = step
     
@@ -223,7 +224,11 @@ for x in range(len(t)-1): # Boucle qui permet pour chaque dt de calculer les th�
     accelerationAngulaire[x+1] = (-data["Barge"]["ConstanteAmortissement"] * omega[x] + totalCouples) / inertie() # Application de la méthode d'Euler explicite
     omega[x+1] = omega[x] + accelerationAngulaire[x+1] * dt
     theta[x+1] = theta[x] + omega[x+1] * dt
+logger.debug("Fin de la méthode d'Euler")
 
+
+# Créer une figure avec une taille personnalisée
+fig = plt.figure(figsize=(9, 7))
 
 # Premier graphique
 plt.subplot(3, 1, 1)
@@ -231,15 +236,17 @@ plt.plot(t, np.degrees(theta), label="θ", color="green", linewidth=1)
 plt.plot(t, np.degrees(max_angle_array), "--", label="θ min", color="purple", linewidth=1)
 plt.xlabel("temps (s)")
 plt.ylabel("angle (°)")
+
 plt.title("Angle/temps")
 plt.annotate(round(theta[-1], 3), (27, theta[-1] + 0.7))
-plt.legend(prop={'size': 5}, loc=4)
+plt.legend(prop={'size': 6}, loc=4)
 
 # Deuxième graphique
 plt.subplot(3, 1, 2)
 plt.plot(t, np.rad2deg(theta), label="ω", color="green", linewidth=1)
 plt.xlabel("temps (s)")
 plt.ylabel("vitesse (°/s)")
+
 plt.title("Vitesse/temps")
 plt.legend(prop={'size': 6})
 
@@ -247,7 +254,8 @@ plt.legend(prop={'size': 6})
 plt.subplot(3, 1, 3)
 plt.plot(t, np.rad2deg(accelerationAngulaire), label="α", color="green", linewidth=1)
 plt.xlabel("temps (s)")
-plt.ylabel("accélération (°/s^2)")
+plt.ylabel("accélération (°/s²)")
+
 plt.title("Accélération/temps")
 plt.legend(prop={'size': 6})
 
