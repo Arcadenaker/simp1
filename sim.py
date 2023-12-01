@@ -233,7 +233,7 @@ fig = plt.figure(figsize=(9, 7)) # Donne une taille plus grande à la fenêtre d
 
 plt.subplot(3, 1, 1) # Premier graphique
 plt.plot(t, np.degrees(theta), label="θ", color="green", linewidth=1)
-plt.plot(t, np.degrees(max_angle_array), "--", label="θ min", color="purple", linewidth=1)
+plt.plot(t, np.degrees(max_angle_array), "--", label="θ max", color="red", linewidth=1)
 plt.xlabel("temps (s)")
 plt.ylabel("angle (°)")
 
