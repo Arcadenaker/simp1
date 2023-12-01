@@ -1,8 +1,8 @@
-import numpy as np
+import numpy as np # (pip install numpy)
 import math
 import tomllib # Module qui permet d'utiliser les fichiers toml avec plus de facilité
-from loguru import logger # Module qui permet d'avoir un beau logging dans la console
-import matplotlib.pyplot as plt
+from loguru import logger # Module qui permet d'avoir un beau logging dans la console (pip install loguru)
+import matplotlib.pyplot as plt # (pip install matplotlib)
 
 # Toutes les constantes qui peuvent être modifiées sont dans le fichier data.toml
 # pour une raison de simplicité pour ne pas devoir revenir dans le code à chaque fois
