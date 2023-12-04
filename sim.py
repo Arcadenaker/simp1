@@ -228,7 +228,6 @@ for x in range(len(t)-1): # Boucle qui permet pour chaque dt de calculer les th�
 logger.debug("Fin de la méthode d'Euler")
 
 
-
 fig = plt.figure(figsize=(9, 7)) # Donne une taille plus grande à la fenêtre du graphique
 
 plt.subplot(3, 1, 1) # Premier graphique
@@ -258,5 +257,13 @@ plt.title("Accélération/temps")
 plt.legend(prop={'size': 6})
 
 plt.tight_layout() # Ajuste l'espacement entre les graphiques pour éviter un chevauchement
+plt.show() # Affiche les trois graphiques
 
-plt.show() # Affiche les graphiques
+
+
+plt.figure(5)
+plt.plot(np.rad2deg(omega), np.rad2deg(theta), color="green")
+plt.xlabel("theta (°)")
+plt.ylabel("vitesse angulaire (°/s)")
+plt.title("Diagramme de phase")
+plt.show() # Affiche le diagramme de phase
