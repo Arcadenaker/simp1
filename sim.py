@@ -211,6 +211,10 @@ CMtotal = centre_masse_total(data["Angles"]) # Calcule le centre de masse total 
 theta[0] = 0 # S'initialise en theta
 dt = step
 
+logger.info(f"La masse totale de la grue est de {masse_totale()}") # Affiche les données importantes
+logger.info(f"L'inertie de la grue est de {inertie()}")
+logger.info(f"La constante d'amortissement est {data['Barge']['ConstanteAmortissement']}")
+
 logger.debug("Début de la méthode d'Euler explicite")
 for x in range(len(t)-1): # Boucle qui permet pour chaque dt de calculer les thétas
     dt = step
