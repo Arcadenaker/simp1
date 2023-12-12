@@ -197,6 +197,28 @@ def inertie():
     """
     return (masse_totale()*(data["Barge"]["Longueur"])**2+data["Barge"]["Hauteur"]**2)/12
 
+def convertisseur_tracker(fichier):
+    """
+    Fonction qui retourne les angles théta en fonction du temps du fichier tracker
+    Pré: Prend le nom du fichier
+    Post: Retourne le temps avec son angle
+    """
+    read_data = np.loadtxt(fichier) # Charge les données du fichier
+    (t,x1,y1,x2,y2,x3,y3) = read_data.T # Dézippe les colonnes du tableau de données dans des variables distinctes (t, x1, y1, x2, y2, x3, y3)
+    len_time = len(t) # Obtient la longueur du vecteur temps
+
+    vec1 = np.zeros((len_time,2))   # Initialise deux vecteurs pour stocker les composantes des vecteurs entre les points
+    vec2 = np.zeros((len_time,2))
+    cos_angle = np.zeros_like(t)    # Initialise un tableau pour stocker les cosinus des angles entre les vecteurs
+    theta = np.zeros_like(t)        # Initialise un tableau pour stocker les angles theta
+    
+    for i in range(len_time): # Boucle à travers les points pour calculer les vecteurs, les cosinus et les angles theta
+        vec1[i,:] = [x2[i]-x1[i],y2[i]-y1[i]]
+        vec2[i,:] = [x3[i]-x1[i],y3[i]-y1[i]]
+        cos_angle[i] = np.dot(vec1[i,:],vec2[i,:])/( np.linalg.norm(vec1[i,:]) * np.linalg.norm(vec2[i,:]))
+        theta[i] = math.acos(cos_angle[i])*(180/math.pi)-90 
+    return t, theta # Retourne le temps et les angles theta calculés
+
 step = 0.0001 # Le t+1 infinitésimal calculé
 end = 5.5 # Le t maximal représenté sur le graphe
 t = np.arange(0, end, step) # Le tableau numpy avec tout les tmps 
@@ -229,13 +251,15 @@ for x in range(len(t)-1): # Boucle qui permet pour chaque dt de calculer les th�
     accelerationAngulaire[x+1] = (-data["Barge"]["ConstanteAmortissement"] * omega[x] + totalCouples) / inertie() # Application de la méthode d'Euler explicite
     omega[x+1] = omega[x] + accelerationAngulaire[x+1] * dt
     theta[x+1] = theta[x] + omega[x+1] * dt
-logger.debug("Fin de la méthode d'Euler")
-
-
+logger.debug("Fin de la méthode d'Euler")    
+    
 fig = plt.figure(figsize=(9, 7)) # Donne une taille plus grande à la fenêtre du graphique
+
+tracker = convertisseur_tracker("data.txt")
 
 plt.subplot(3, 1, 1) # Premier graphique
 plt.plot(t, np.degrees(theta), label="θ", color="green", linewidth=1)
+plt.plot(tracker[0], tracker[1]+67, label="tracker", color="pink")
 plt.plot(t, np.degrees(max_angle_array), "--", label="θ max", color="red", linewidth=1)
 plt.xlabel("temps (s)")
 plt.ylabel("angle (°)")
@@ -262,8 +286,6 @@ plt.legend(prop={'size': 6})
 
 plt.tight_layout() # Ajuste l'espacement entre les graphiques pour éviter un chevauchement
 plt.show() # Affiche les trois graphiques
-
-
 
 plt.figure(5)
 plt.plot(np.rad2deg(omega), np.rad2deg(theta), color="green")
