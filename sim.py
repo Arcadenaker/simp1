@@ -227,6 +227,12 @@ omega = np.empty_like(t)
 accelerationAngulaire = np.empty_like(t)
 max_angle_array = np.full_like(t, -angles_immersion_soulevement())
 
+Eg = np.empty_like(t) # Variables pour le graphique des énergies
+Ec = np.empty_like(t)
+Ek = np.empty_like(t)
+Ea = np.empty_like(t)
+Etot = np.empty_like(t)
+
 CMgrue = centre_masse_grue(data["Angles"]) # Calcule le centre de masse de la grue en fonction des angles d'inclinaison des articulations
 CMtotal = centre_masse_total(data["Angles"]) # Calcule le centre de masse total en fonction des angles d'inclinaison des articulations
 
@@ -242,7 +248,9 @@ for x in range(len(t)-1): # Boucle qui permet pour chaque dt de calculer les th�
     dt = step
     
     centrePousseeX = centre_poussee(theta[x])[0] 
+    centrePousseeY = math.cos(theta[x]) * centre_poussee(theta[x])[1]
     centreGraviteX = math.sin(theta[x]) * CMtotal[1] # Prend en compte la rotation du centre de masse total
+    centreGraviteY = math.cos(theta[x]) * CMtotal[1]
 
     coupleRedressement = masse_totale() * 9.81 * abs(centrePousseeX - centreGraviteX) # Cr
     coupleDestabilisateur = -masse_articulations() * 9.81 * CMgrue[0] # Ca
@@ -251,29 +259,18 @@ for x in range(len(t)-1): # Boucle qui permet pour chaque dt de calculer les th�
     accelerationAngulaire[x+1] = (-data["Barge"]["ConstanteAmortissement"] * omega[x] + totalCouples) / inertie() # Application de la méthode d'Euler explicite
     omega[x+1] = omega[x] + accelerationAngulaire[x+1] * dt
     theta[x+1] = theta[x] + omega[x+1] * dt
+
+    Eg[x+1] = masse_totale() * 9.81 * (centreGraviteY-CMtotal[1])               # E Flotteur
+    Ec[x+1] = -masse_totale() * 9.81 * (centrePousseeY-centre_poussee(0)[1])    # E Poussée
+    Ek[x+1] = enfoncement() * omega[x]**2/2                                     # E Cinétique
+    Ea[x+1] = -coupleDestabilisateur * theta[x]                                 # E Charge
+    Etot[x+1] = Eg[x] + Ec[x] + Ek[x] + Ea[x]                                   # E Totale
+
 logger.debug("Fin de la méthode d'Euler") 
-
-
-Eg = np.empty_like(t)
-Ec = np.empty_like(t)
-Ek = np.empty_like(t)
-Ea = np.empty_like(t)
-Etot = np.empty_like(t)
-
-for x in range(len(t)):
-    Ca = -masse_articulations() * 9.81 * CMgrue[0]
-    centreGraviteY = math.cos(theta[x]) * CMtotal[1]
-    centrePousseeY = math.cos(theta[x]) * centre_poussee(theta[x])[1]
-    Eg[x] = masse_totale() * 9.81 * (centreGraviteY-CMtotal[1])
-    Ec[x] = -masse_totale() * 9.81 * (centrePousseeY-centre_poussee(0)[1])
-    Ek[x] = enfoncement() * omega[x]**2/2
-    Ea[x] = -Ca * theta[x]
-    Etot[x] = Eg[x] + Ec[x] + Ek[x] + Ea[x]
-    
-fig = plt.figure(figsize=(9, 7)) # Donne une taille plus grande à la fenêtre du graphique
 
 tracker = convertisseur_tracker("data.txt")
 
+plt.figure(figsize=(9, 7)) # Donne une taille plus grande à la fenêtre du graphique
 plt.subplot(3, 1, 1) # Premier graphique
 plt.plot(t, np.degrees(theta), label="θ", color="green", linewidth=1)
 plt.plot(tracker[0], tracker[1]+67, label="tracker", color="pink")
