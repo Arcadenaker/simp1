@@ -251,7 +251,24 @@ for x in range(len(t)-1): # Boucle qui permet pour chaque dt de calculer les th�
     accelerationAngulaire[x+1] = (-data["Barge"]["ConstanteAmortissement"] * omega[x] + totalCouples) / inertie() # Application de la méthode d'Euler explicite
     omega[x+1] = omega[x] + accelerationAngulaire[x+1] * dt
     theta[x+1] = theta[x] + omega[x+1] * dt
-logger.debug("Fin de la méthode d'Euler")    
+logger.debug("Fin de la méthode d'Euler") 
+
+
+Eg = np.empty_like(t)
+Ec = np.empty_like(t)
+Ek = np.empty_like(t)
+Ea = np.empty_like(t)
+Etot = np.empty_like(t)
+
+for x in range(len(t)):
+    Ca = -masse_articulations() * 9.81 * CMgrue[0]
+    centreGraviteY = math.cos(theta[x]) * CMtotal[1]
+    centrePousseeY = math.cos(theta[x]) * centre_poussee(theta[x])[1]
+    Eg[x] = masse_totale() * 9.81 * (centreGraviteY-CMtotal[1])
+    Ec[x] = -masse_totale() * 9.81 * (centrePousseeY-centre_poussee(0)[1])
+    Ek[x] = enfoncement() * omega[x]**2/2
+    Ea[x] = -Ca * theta[x]
+    Etot[x] = Eg[x] + Ec[x] + Ek[x] + Ea[x]
     
 fig = plt.figure(figsize=(9, 7)) # Donne une taille plus grande à la fenêtre du graphique
 
@@ -292,4 +309,17 @@ plt.plot(np.rad2deg(omega), np.rad2deg(theta), color="green")
 plt.xlabel("theta (°)")
 plt.ylabel("vitesse angulaire (°/s)")
 plt.title("Diagramme de phase")
+plt.grid(True) # Affiche un cadrillage
 plt.show() # Affiche le diagramme de phase
+
+plt.figure(2)
+plt.plot(t, Eg, label="E Flotteur", color="#06668C")
+plt.plot(t, Ec, label="E Poussée", color="#E9C46A")
+plt.plot(t, Ek, label="E Cinétique", color="#A4BD01")
+plt.plot(t, Ea, label="E Charge", color="#BD3100")
+plt.plot(t, Etot, label="E Totale", color="#80586D")
+plt.xlabel("temps (s)")
+plt.ylabel("énergie (J)")
+plt.title("Energie/temps")
+plt.legend(prop={'size': 7},loc='upper right')
+plt.show() # Affiche le graphique des énergies
