@@ -1,24 +1,24 @@
 # Unités utilisées: [m], [kg]
 
-Angles = [0,0,0,0]
+Angles = [0,0,0,0] # Angles entre l'horizontale et l'articulation en randian à partir de la première articulation
 
 [Barge]
 Longueur = 0.55
 Largeur = 0.6
 Hauteur = 0.17
-Masse = 9
+Masse = 10.117
 Declage_grue = 0.15
-ConstanteAmortissement = 0.7
+ConstanteAmortissement = 0.4
 
 [ContrePoids]
-Masse = 1
+Masse = 1.874
 # Pour sa longueur, il faut mettre la première articulation 
 # à l'horizontale et mesurer ce qui dépasse à l'arrière de la grue
 Longueur = 0.1
 
 [Articulations]
-0 = {longueur = 0.3, largeur = 0.08, masse = 0.5} #Socle
-1 = {longueur = 0.3, largeur = 0.08, masse = 0.5}
-2 = {longueur = 0.3, largeur = 0.08, masse = 0.5}
-3 = {longueur = 0.1, largeur = 0.08, masse = 0.5}
-4 = {longueur = 0.05, largeur = 0.1, masse = 0.2}
+0 = {longueur = 0.25, largeur = 0.15, masse = 0.242} #Socle
+1 = {longueur = 0.4, largeur = 0.06, masse = 0.410}
+2 = {longueur = 0.35, largeur = 0.06, masse = 0.388}
+3 = {longueur = 0.12, largeur = 0.06, masse = 0.130}
+4 = {longueur = 0.05, largeur = 0.1, masse = 0.2} # Poids à soulever
