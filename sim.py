@@ -283,7 +283,7 @@ plt.annotate(round(theta[-1], 3), (27, theta[-1] + 0.7))
 plt.legend(prop={'size': 6}, loc=4)
 
 plt.subplot(3, 1, 2) # Deuxième graphique
-plt.plot(t, np.rad2deg(theta), label="ω", color="green", linewidth=1)
+plt.plot(t, np.rad2deg(omega), label="ω", color="green", linewidth=1)
 plt.xlabel("temps (s)")
 plt.ylabel("vitesse (°/s)")
 
